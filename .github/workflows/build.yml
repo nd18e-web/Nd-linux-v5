@@ -1,0 +1,33 @@
+name: Zbuduj ISO ND18E
+
+on:
+  workflow_dispatch:   # uruchamiasz recznie przyciskiem "Run workflow"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zwolnij miejsce na dysku
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache
+          df -h /
+
+      - name: Zbuduj ISO w Debianie 12
+        run: |
+          chmod +x build_nd18e_linux.sh
+          docker run --rm --privileged -e DEBIAN_FRONTEND=noninteractive \
+            -v "$PWD":/work -w /work debian:bookworm \
+            bash -c "apt-get update && apt-get install -y sudo && ./build_nd18e_linux.sh"
+
+      - name: Pokaz wynik kontroli NVIDIA (jesli jest w logu)
+        run: ls -lh ND18E_Linux.iso
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ND18E_Linux-iso
+          path: ND18E_Linux.iso
+          retention-days: 7
+          compression-level: 0
